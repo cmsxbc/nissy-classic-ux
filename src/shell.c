@@ -6,6 +6,10 @@
 #include <readline/history.h>
 #endif
 
+#ifndef VERSION
+#define VERSION "0.0.0.dev"
+#endif
+
 static void             cleanwhitespaces(char *line);
 static int              parseline(char *line, char **v);
 
@@ -169,6 +173,7 @@ solve_args_generator(const char *text, int state)
     return NULL;
 }
 
+#ifdef ENABLE_READLINE
 char **
 nissy_completion(const char *text, int start, int end)
 {
@@ -220,6 +225,7 @@ launch_readline()
         free(shell_argv[i]);
     free(shell_argv);
 }
+#endif
 
 void
 launch(bool batchmode)
