@@ -770,6 +770,42 @@ step_by_step_solve(Cube cube, Step** next_steps, struct solveoptions** next_opts
     free_alglist(cur_step_algs);
 }
 
+
+static int
+count_alg_list(AlgList *alg_list)
+{
+    int s = 0;
+    for (AlgListNode *node = alg_list->first; node != NULL; node = node->next)
+        s += node->alg->len;
+    return s;
+}
+
+
+static int
+compare_alg_list(const void *avoid, const void *bvoid)
+{
+    AlgList *a = *(AlgList **) avoid;
+    AlgList *b = *(AlgList **) bvoid;
+    int ta = count_alg_list(a);
+    int tb = count_alg_list(b);
+    if (ta - tb)
+        return ta - tb;
+
+    AlgListNode *an = a->first;
+    AlgListNode *bn = b->first;
+    while (an != NULL && bn != NULL) {
+        if (an->alg->len - bn->alg->len)
+            return an->alg->len - bn->alg->len;
+        an = an->next;
+        bn = bn->next;
+    }
+    if (an)
+        return 1;
+    if (bn)
+        return -1;
+    return 0;
+}
+
 static void
 stage_exec(CommandArgs *args)
 {
@@ -857,6 +893,17 @@ stage_exec(CommandArgs *args)
         }
         free_alglist(eo_algs);
     }
+
+    AlgList* alg_list_array[alglistlist.len+1];
+    int i;
+    AlgListListNode *node;
+    for (i = 0, node = alglistlist.first; i < alglistlist.len; i++, node=node->next) {
+        alg_list_array[i] = node->alg_list;
+    }
+    qsort(alg_list_array, alglistlist.len, sizeof(AlgList*), &compare_alg_list);
+    for (i = 0, node = alglistlist.first; i < alglistlist.len; i++, node = node->next)
+        node->alg_list = alg_list_array[i];
+
     for (AlgListListNode* alglistlistnode = alglistlist.first; alglistlistnode != NULL; alglistlistnode = alglistlistnode->next) {
         fprintf(stdout, "------\n");
         print_alglist(stdout, alglistlistnode->alg_list, true);
