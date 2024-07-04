@@ -9,6 +9,7 @@ CommandArgs *           parse_no_arg(int c, char **v);
 CommandArgs *           ptable_parse_args(int c, char **v);
 CommandArgs *           solve_parse_args(int c, char **v);
 CommandArgs *           scramble_parse_args(int c, char **v);
+CommandArgs *           stage_parse_args(int c, char **v);
 
 /* Exec functions ************************************************************/
 
@@ -27,10 +28,12 @@ static void             help_exec(CommandArgs *args);
 static void             quit_exec(CommandArgs *args);
 static void             unniss_exec(CommandArgs *args);
 static void             version_exec(CommandArgs *args);
+static void             stage_exec(CommandArgs *args);
 
 /* Local functions ***********************************************************/
 
 static bool             read_step(CommandArgs *args, char *str);
+static Step*            get_step(char *str);
 static bool             read_scrtype(CommandArgs *args, char *str);
 static bool             read_scramble(int c, char **v, CommandArgs *args);
 
@@ -171,6 +174,15 @@ version_cmd = {
 	.exec        = version_exec,
 };
 
+Command
+stage_cmd = {
+    .name        = "stage",
+    .usage       = "stage [OPTIONS] SCRAMBLE",
+    .description = "Solve step by step",
+    .parse_args  = stage_parse_args,
+    .exec        = stage_exec,
+};
+
 Command *commands[] = {
 	&commands_cmd,
 	&freemem_cmd,
@@ -187,6 +199,7 @@ Command *commands[] = {
 	&cleanup_cmd,
 	&unniss_cmd,
 	&version_cmd,
+    &stage_cmd,
 	NULL
 };
 
@@ -414,6 +427,13 @@ ptable_parse_args(int c, char **v)
 	}
 
 	a->success = c == 0 || (c == 1 && a->pd != NULL);
+	return a;
+}
+
+CommandArgs *
+stage_parse_args(int c, char **v)
+{
+    CommandArgs *a = parse_only_scramble(c, v);
 	return a;
 }
 
@@ -706,6 +726,143 @@ version_exec(CommandArgs *args)
 	printf(VERSION"\n");
 }
 
+typedef struct alglistlist AlgListList;
+typedef struct alglistlistnode AlgListListNode;
+
+struct alglistlist {
+    AlgListListNode * first;
+    AlgListListNode * last;
+    int len;
+};
+
+struct alglistlistnode {
+    AlgList * alg_list;
+    AlgListListNode *next;
+};
+
+static void
+step_by_step_solve(Cube cube, Step** next_steps, struct solveoptions** next_opts, AlgList* pre_step_algs,  AlgListList* sols) {
+    if (*next_steps == NULL) {
+        AlgList* alg_list = new_alglist();
+        for (AlgListNode *alg_list_node = pre_step_algs->first; alg_list_node != NULL; alg_list_node = alg_list_node->next) {
+            append_alg(alg_list, alg_list_node->alg);
+        }
+        AlgListListNode * alg_list_list_node = malloc(sizeof(AlgListListNode));
+        alg_list_list_node->alg_list = alg_list;
+        alg_list_list_node->next = NULL;
+        if (++sols->len == 1)
+            sols->first = alg_list_list_node;
+        else
+            sols->last->next = alg_list_list_node;
+        sols->last = alg_list_list_node;
+        return;
+    }
+    AlgListNode *last_alg_node = pre_step_algs->last;
+    Cube c = apply_alg(last_alg_node->alg, cube);
+    AlgList* cur_step_algs = solve(c, *next_steps, *next_opts);
+    for (AlgListNode* cur_step_alg = cur_step_algs->first; cur_step_alg != NULL; cur_step_alg=cur_step_alg->next) {
+        append_alg(pre_step_algs, cur_step_alg->alg);
+        step_by_step_solve(c, next_steps+1, next_opts+1, pre_step_algs, sols);
+        pre_step_algs->len --;
+        pre_step_algs->last = last_alg_node;
+        last_alg_node->next = NULL;
+    }
+    free_alglist(cur_step_algs);
+}
+
+static void
+stage_exec(CommandArgs *args)
+{
+    Cube c;
+
+	init_all_movesets();
+	init_symcoord();
+
+	c = apply_alg(args->scramble, (Cube){0});
+    Step* eo_steps[] = {
+            get_step("eofb"),
+            get_step("eorl"),
+            get_step("eoud"),
+            NULL,
+    };
+    Step* after_eo_steps[] = {
+            get_step("dr-eo"),
+            get_step("htr"),
+            get_step("htrfin"),
+            NULL,
+    };
+    struct solveoptions eo_opts = {
+            .min_moves = 0,
+            .max_moves = 5,
+            .max_solutions = 5,
+            .nthreads = 4,
+            .optimal = -1,
+            .nisstype = NISS,
+            .verbose = false,
+            .all = true,
+            .print_number = true,
+            .count_only = false,
+    };
+    struct solveoptions dr_opts = {
+            .min_moves = 0,
+            .max_moves = 8,
+            .max_solutions = 5,
+            .nthreads = 4,
+            .optimal = -1,
+            .nisstype = NISS,
+            .verbose = false,
+            .all = true,
+            .print_number = true,
+            .count_only = false,
+    };
+    struct solveoptions htr_opts = {
+            .min_moves = 0,
+            .max_moves = 9,
+            .max_solutions = 5,
+            .nthreads = 4,
+            .optimal = -1,
+            .nisstype = NISS,
+            .verbose = false,
+            .all = true,
+            .print_number = true,
+            .count_only = false,
+    };
+    struct solveoptions hfrfin_opts = {
+            .min_moves = 0,
+            .max_moves = 10,
+            .max_solutions = 1,
+            .nthreads = 4,
+            .optimal = 0,
+            .nisstype = NORMAL,
+            .verbose = false,
+            .all = true,
+            .print_number = true,
+            .count_only = false,
+    };
+    struct solveoptions* after_eo_opts[] ={
+            &dr_opts, &htr_opts, &hfrfin_opts, NULL
+    };
+    AlgListList alglistlist = {
+            .first = NULL,
+            .last = NULL,
+            .len = 0
+    };
+    for (int i = 0; eo_steps[i] != NULL; i++) {
+        AlgList * eo_algs = solve(c, eo_steps[i], &eo_opts);
+        sort_alglist(eo_algs);
+	    for (AlgListNode *eo_alg = eo_algs->first; eo_alg != NULL; eo_alg = eo_alg->next) {
+            AlgList *pre_step = new_alglist();
+            append_alg(pre_step, eo_alg->alg);
+            step_by_step_solve(c, after_eo_steps, after_eo_opts, pre_step, &alglistlist);
+        }
+        free_alglist(eo_algs);
+    }
+    for (AlgListListNode* alglistlistnode = alglistlist.first; alglistlistnode != NULL; alglistlistnode = alglistlistnode->next) {
+        fprintf(stdout, "------\n");
+        print_alglist(stdout, alglistlistnode->alg_list, true);
+    }
+}
+
 /* Local functions implementation ********************************************/
 
 static bool
@@ -767,6 +924,19 @@ read_step(CommandArgs *args, char *str)
 	}
 
 	return false;
+}
+
+static Step*
+get_step(char *str)
+{
+    int i;
+
+    for (i = 0; steps[i] != NULL; i++) {
+        if (!strcmp(steps[i]->shortname, str)) {
+            return steps[i];
+        }
+    }
+    return NULL;
 }
 
 /* Public functions implementation *******************************************/

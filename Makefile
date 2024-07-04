@@ -21,7 +21,7 @@ FILES = $(wildcard src/*.c)
 all: nissy
 
 nissy: clean $(FILES)
-	${CC} ${CFLAGS} -DENABLE_READLINE -lreadline -lc -o nissy $(FILES)
+	${CC} ${CFLAGS} -DENABLE_READLINE -o nissy $(FILES) -lreadline -lc
 
 nissy.exe:
 	x86_64-w64-mingw32-gcc ${CFLAGS} -static -o nissy.exe src/*.c

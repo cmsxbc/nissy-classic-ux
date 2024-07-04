@@ -3,3 +3,4 @@ doc/*.pdf
 experiments
 nissy
 nissy-*
+cmake-build-*
