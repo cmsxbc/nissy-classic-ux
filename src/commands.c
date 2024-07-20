@@ -816,8 +816,81 @@ struct alglistlist {
 
 struct alglistlistnode {
     AlgList * alg_list;
+    Alg * final_alg;
     AlgListListNode *next;
 };
+
+
+void
+compose_alg_with_cancel(Alg * alg1, Alg* alg2, bool in_inv)
+{
+    for (int i = 0; i < alg2->len; i++) {
+        if (alg2->inv[i] != in_inv)
+            continue;
+        Move nm = alg2->move[i];
+        if (alg1->len <= 0) {
+            append_move(alg1, nm, in_inv);
+            continue;
+        }
+        Move l1 = alg1->move[alg1->len-1];
+        if (!commute(nm, l1)) {
+            append_move(alg1, nm, in_inv);
+            continue;
+        }
+        Move bl1 = base_move(l1);
+        Move bn = base_move(nm);
+        if (bl1 == bn) {
+            if (l1 == inverse_move(nm)) {
+                alg1->len --;
+                alg1->move[alg1->len] = NULLMOVE;
+                alg1->inv[alg1->len] = false;
+                continue;
+            } else {
+                Move new_move = ((l1 - bl1) + (nm - bn) + 1) % 3 + bn;
+                alg1->move[alg1->len-1] = new_move;
+                continue;
+            }
+        } else if (alg1->len > 1) {
+            Move l2 = alg1->move[alg1->len-2];
+            Move bl2 = base_move(l2);
+            if (bl2 != bn) {
+                append_move(alg1, nm, in_inv);
+                continue;
+            } else if (l2 == inverse_move(nm)) {
+                alg1->len --;
+                alg1->move[alg1->len-1] = alg1->move[alg1->len];
+                alg1->move[alg1->len] = NULLMOVE;
+                alg1->inv[alg1->len] = false;
+                continue;
+            } else {
+                Move new_move = ((l2 - bl2) + (nm - bn) + 1) % 3 + bn;
+                alg1->move[alg1->len-2] = new_move;
+                continue;
+            }
+        } else {
+            append_move(alg1, nm, in_inv);
+            continue;
+        }
+    }
+}
+
+AlgListListNode  *
+create_alg_list_list_node(AlgList* alg_list)
+{
+    AlgListListNode * alln = malloc(sizeof(AlgListListNode));
+    alln->alg_list = alg_list;
+    alln->next = NULL;
+    alln->final_alg = new_alg("");
+    int i = 0;
+    Alg* algs[2] = {new_alg(""), new_alg("")};
+    for (int in_inv=0; in_inv <= 1; in_inv++)
+        for (AlgListNode *node = alg_list->first; node != NULL; node = node->next)
+            compose_alg_with_cancel(algs[in_inv], node->alg, in_inv);
+    compose_alg(alln->final_alg, algs[0]);
+    compose_alg_with_cancel(alln->final_alg, on_inverse(inverse_alg(algs[1])), false);
+    return alln;
+}
+
 
 static void
 step_by_step_solve(Cube cube, Step** next_steps, struct solveoptions** next_opts, AlgList* pre_step_algs,  AlgListList* sols) {
@@ -826,9 +899,7 @@ step_by_step_solve(Cube cube, Step** next_steps, struct solveoptions** next_opts
         for (AlgListNode *alg_list_node = pre_step_algs->first; alg_list_node != NULL; alg_list_node = alg_list_node->next) {
             append_alg(alg_list, alg_list_node->alg);
         }
-        AlgListListNode * alg_list_list_node = malloc(sizeof(AlgListListNode));
-        alg_list_list_node->alg_list = alg_list;
-        alg_list_list_node->next = NULL;
+        AlgListListNode * alg_list_list_node = create_alg_list_list_node(alg_list);
         if (++sols->len == 1)
             sols->first = alg_list_list_node;
         else
@@ -885,17 +956,19 @@ count_alg_list(AlgList *alg_list)
 
 
 static int
-compare_alg_list(const void *avoid, const void *bvoid)
+compare_alg_list_list_node(const void *avoid, const void *bvoid)
 {
-    AlgList *a = *(AlgList **) avoid;
-    AlgList *b = *(AlgList **) bvoid;
-    int ta = count_alg_list(a);
-    int tb = count_alg_list(b);
+    AlgListListNode *a = *(AlgListListNode **) avoid;
+    AlgListListNode *b = *(AlgListListNode **) bvoid;
+    if (a->final_alg->len - b->final_alg->len)
+        return a->final_alg->len - b->final_alg->len;
+    int ta = count_alg_list(a->alg_list);
+    int tb = count_alg_list(b->alg_list);
     if (ta - tb)
         return ta - tb;
 
-    AlgListNode *an = a->first;
-    AlgListNode *bn = b->first;
+    AlgListNode *an = a->alg_list->first;
+    AlgListNode *bn = b->alg_list->first;
     while (an != NULL && bn != NULL) {
         if (an->alg->len - bn->alg->len)
             return an->alg->len - bn->alg->len;
@@ -952,7 +1025,7 @@ stage_exec(CommandArgs *args)
             .optimal = 0,
             .nisstype = NISS,
             .verbose = false,
-            .all = true,
+            .all = false,
             .print_number = true,
             .count_only = false,
     };
@@ -1028,15 +1101,18 @@ stage_exec(CommandArgs *args)
             fprintf(stderr, "%d Found.\n", alglistlist.len - sols_before);
         }
     }
-    AlgList* alg_list_array[alglistlist.len+1];
+    AlgListListNode* alg_list_list_node_array[alglistlist.len+1];
     int i;
     AlgListListNode *node;
-    for (i = 0, node = alglistlist.first; i < alglistlist.len; i++, node=node->next) {
-        alg_list_array[i] = node->alg_list;
+    for (i = 0, node = alglistlist.first; i < alglistlist.len; i++, node=node->next)
+        alg_list_list_node_array[i] = node;
+    qsort(alg_list_list_node_array, alglistlist.len, sizeof(AlgListListNode*), &compare_alg_list_list_node);
+    for (i = 1; i < alglistlist.len; i++) {
+        alg_list_list_node_array[i]->next = NULL;
+        alg_list_list_node_array[i-1]->next = alg_list_list_node_array[i];
     }
-    qsort(alg_list_array, alglistlist.len, sizeof(AlgList*), &compare_alg_list);
-    for (i = 0, node = alglistlist.first; i < alglistlist.len; i++, node = node->next)
-        node->alg_list = alg_list_array[i];
+    alglistlist.first = alg_list_list_node_array[0];
+    alglistlist.last = alg_list_list_node_array[alglistlist.len - 1];
 
     int no = 1;
     for (AlgListListNode* alglistlistnode = alglistlist.first; alglistlistnode != NULL; alglistlistnode = alglistlistnode->next, no++) {
@@ -1044,7 +1120,8 @@ stage_exec(CommandArgs *args)
         int total_moves = 0;
         for (AlgListNode* step_list_node = alglistlistnode->alg_list->first; step_list_node != NULL; step_list_node = step_list_node->next)
             total_moves += step_list_node->alg->len;
-        fprintf(stdout, "no.%d moves: %d\n", no, total_moves);
+        fprintf(stdout, "no.%d (%d <- %d): ", no, alglistlistnode->final_alg->len, total_moves);
+        print_alg(stdout, alglistlistnode->final_alg, true);
         print_alglist(stdout, alglistlistnode->alg_list, true);
     }
 }
