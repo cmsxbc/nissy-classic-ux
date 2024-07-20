@@ -448,6 +448,19 @@ stage_parse_args(int c, char **v)
     a->opts->all = false;
     a->opts->print_number = true;
     a->opts->count_only = false;
+    a->other = malloc(sizeof(int) * 8);
+    int *stage_max_moves = a->other;
+    stage_max_moves[0] = 5;
+    stage_max_moves[1] = 12;
+    stage_max_moves[2] = 20;
+    stage_max_moves[3] = 25;
+    int stage_max_moves_i = 0;
+    int *stage_max_solutions = stage_max_moves + 4;
+    stage_max_solutions[0] = 30;
+    stage_max_solutions[1] = 2;
+    stage_max_solutions[2] = 1;
+    stage_max_solutions[3] = 1;
+    int stage_max_sols_i = 0;
 
 
     for (i = 0; i < c; i++) {
@@ -468,6 +481,32 @@ stage_parse_args(int c, char **v)
             a->opts->print_number = false;
         } else if (!strcmp(v[i], "-c")) {
             a->opts->count_only = true;
+        } else if (!strcmp(v[i], "-M")) {
+            if (stage_max_moves_i > 3) {
+                fprintf(stderr, "Too many -M\n");
+                return a;
+            }
+            val = strtol(v[++i], NULL, 10);
+            stage_max_moves[stage_max_moves_i++] = val;
+        } else if (!strcmp(v[i], "-n")) {
+            if (stage_max_sols_i > 3) {
+                fprintf(stderr, "Too many -n\n");
+                return a;
+            }
+            val = strtol(v[++i], NULL, 10);
+            stage_max_solutions[stage_max_sols_i++] = val;
+        } else if (!strcmp(v[i], "-odr")) {
+            if (a->opts->optimal != -1) {
+                fprintf(stderr, "conflict option -odr: you have supply -ohtr");
+                return a;
+            }
+            a->opts->optimal = 1;
+        } else if (!strcmp(v[i], "-ohtr")) {
+            if (a->opts->optimal != -1) {
+                fprintf(stderr, "conflict option -ohtr: you have supply -odr");
+                return a;
+            }
+            a->opts->optimal = 2;
         } else {
             break;
         }
@@ -879,10 +918,12 @@ stage_exec(CommandArgs *args)
 	init_symcoord();
 
 	c = apply_alg(args->scramble, (Cube){0});
+    int* stage_max_moves = args->other;
+    int* stage_max_sols = stage_max_moves+4;
     struct solveoptions eo_opts = {
             .min_moves = 0,
-            .max_moves = 5,
-            .max_solutions = 30,
+            .max_moves = stage_max_moves[0],
+            .max_solutions = stage_max_sols[0],
             .nthreads = args->opts->nthreads,
             .optimal = -1,
             .nisstype = NISS,
@@ -893,10 +934,10 @@ stage_exec(CommandArgs *args)
     };
     struct solveoptions dr_opts = {
             .min_moves = 0,
-            .max_moves = 12,
-            .max_solutions = 2,
+            .max_moves = stage_max_moves[1],
+            .max_solutions = stage_max_sols[1],
             .nthreads = args->opts->nthreads,
-            .optimal = -1,
+            .optimal = 0,
             .nisstype = NISS,
             .verbose = false,
             .all = true,
@@ -905,20 +946,20 @@ stage_exec(CommandArgs *args)
     };
     struct solveoptions htr_opts = {
             .min_moves = 0,
-            .max_moves = 20,
-            .max_solutions = 1,
+            .max_moves = stage_max_moves[2],
+            .max_solutions = stage_max_sols[2],
             .nthreads = args->opts->nthreads,
-            .optimal = -1,
+            .optimal = 0,
             .nisstype = NISS,
             .verbose = false,
             .all = true,
             .print_number = true,
             .count_only = false,
     };
-    struct solveoptions hfrfin_opts = {
+    struct solveoptions htrfin_opts = {
             .min_moves = 0,
-            .max_moves = 30,
-            .max_solutions = 1,
+            .max_moves = stage_max_moves[3],
+            .max_solutions = stage_max_sols[3],
             .nthreads = args->opts->nthreads,
             .optimal = 0,
             .nisstype = NORMAL,
@@ -926,6 +967,9 @@ stage_exec(CommandArgs *args)
             .all = true,
             .print_number = true,
             .count_only = false,
+    };
+    struct solveoptions* all_opts[5] ={
+            &eo_opts, &dr_opts, &htr_opts, &htrfin_opts, NULL,
     };
     Step* eo_steps[] = {
             get_step("eofb"),
@@ -940,26 +984,29 @@ stage_exec(CommandArgs *args)
             get_step("drfb-eoud"),
             get_step("drrl-eoud"),
     };
-    Step * htr_step = get_step("htr");
-    Step * htrfin_step = get_step("htrfin");
-    Step * optimal_step = get_step("optimal");
+    Step * htr_step = NULL, * fin_step = NULL;
+    if (args->opts->optimal == 0) {
+        htr_step = get_step("htr");
+        fin_step = get_step("htrfin");
+    } else if (args->opts->optimal == 1) {
+        htr_step = get_step("optimal");
+        all_opts[2] = &htrfin_opts;
+        all_opts[3] = NULL;
+    } else if (args->opts->optimal == 2) {
+        htr_step = get_step("htr");
+        fin_step = get_step("optimal");
+    } else {
+        fprintf(stderr, "WTF, shall never reached!!!\n");
+        return;
+    }
     Step* all_steps[][5] = {
-            {eo_steps[0], dr_steps[0], htr_step, htrfin_step, NULL},
-            {eo_steps[0], dr_steps[0], htr_step, optimal_step, NULL},
-            {eo_steps[0], dr_steps[1], htr_step, htrfin_step, NULL},
-            {eo_steps[0], dr_steps[1], htr_step, optimal_step, NULL},
-            {eo_steps[1], dr_steps[2], htr_step, htrfin_step, NULL},
-            {eo_steps[1], dr_steps[2], htr_step, optimal_step, NULL},
-            {eo_steps[1], dr_steps[3], htr_step, htrfin_step, NULL},
-            {eo_steps[1], dr_steps[3], htr_step, optimal_step, NULL},
-            {eo_steps[2], dr_steps[4], htr_step, htrfin_step, NULL},
-            {eo_steps[2], dr_steps[4], htr_step, optimal_step, NULL},
-            {eo_steps[2], dr_steps[5], htr_step, htrfin_step, NULL},
-            {eo_steps[2], dr_steps[5], htr_step, optimal_step, NULL},
+            {eo_steps[0], dr_steps[0], htr_step, fin_step, NULL},
+            {eo_steps[0], dr_steps[1], htr_step, fin_step, NULL},
+            {eo_steps[1], dr_steps[2], htr_step, fin_step, NULL},
+            {eo_steps[1], dr_steps[3], htr_step, fin_step, NULL},
+            {eo_steps[2], dr_steps[4], htr_step, fin_step, NULL},
+            {eo_steps[2], dr_steps[5], htr_step, fin_step, NULL},
             {NULL, NULL, NULL, NULL, NULL},
-    };
-    struct solveoptions* all_opts[5] ={
-            &eo_opts, &dr_opts, &htr_opts, &hfrfin_opts, NULL,
     };
     AlgListList alglistlist = {
             .first = NULL,
@@ -1090,6 +1137,8 @@ free_args(CommandArgs *args)
 		free_alg(args->scramble);
 	if (args->opts != NULL)
 		free(args->opts);
+    if (args->other != NULL)
+        free(args->other);
 
 	/* step and command must not be freed, they are static! */
 
@@ -1110,6 +1159,8 @@ new_args(void)
 	args->step = steps[0]; /* default: first step in list */
 	args->command = NULL;
 	args->pd = NULL;
+
+    args->other = NULL;
 
 	return args;
 }

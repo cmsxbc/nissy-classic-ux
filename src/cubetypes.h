@@ -169,6 +169,7 @@ commandargs
 	bool                      scrstdin;
 	bool                      header;
 	PruneData *               pd;
+    void *                    other;
 };
 
 struct
