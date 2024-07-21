@@ -176,11 +176,11 @@ version_cmd = {
 
 Command
 stage_cmd = {
-    .name        = "stage",
-    .usage       = "stage [OPTIONS] SCRAMBLE",
-    .description = "Solve step by step",
-    .parse_args  = stage_parse_args,
-    .exec        = stage_exec,
+	.name        = "stage",
+	.usage       = "stage [OPTIONS] SCRAMBLE",
+	.description = "Solve step by step",
+	.parse_args  = stage_parse_args,
+	.exec        = stage_exec,
 };
 
 Command *commands[] = {
@@ -199,7 +199,7 @@ Command *commands[] = {
 	&cleanup_cmd,
 	&unniss_cmd,
 	&version_cmd,
-    &stage_cmd,
+	&stage_cmd,
 	NULL
 };
 
@@ -365,7 +365,7 @@ gen_parse_args(int c, char **v)
 			a->success = true;
 		}
 	}
-	
+
 	return a;
 }
 
@@ -433,84 +433,84 @@ ptable_parse_args(int c, char **v)
 CommandArgs *
 stage_parse_args(int c, char **v)
 {
-    int i;
-    long val;
+	int i;
+	long val;
 
-    CommandArgs *a = new_args();
+	CommandArgs *a = new_args();
 
-    a->opts->min_moves = 0;
-    a->opts->max_moves = 20;
-    a->opts->max_solutions = 100;
-    a->opts->nthreads = 1;
-    a->opts->optimal = -1;
-    a->opts->nisstype = NORMAL;
-    a->opts->verbose = false;
-    a->opts->all = false;
-    a->opts->print_number = true;
-    a->opts->count_only = false;
-    a->other = malloc(sizeof(int) * 8);
-    int *stage_max_moves = a->other;
-    stage_max_moves[0] = 5;
-    stage_max_moves[1] = 12;
-    stage_max_moves[2] = 20;
-    stage_max_moves[3] = 25;
-    int stage_max_moves_i = 0;
-    int *stage_max_solutions = stage_max_moves + 4;
-    stage_max_solutions[0] = 30;
-    stage_max_solutions[1] = 2;
-    stage_max_solutions[2] = 1;
-    stage_max_solutions[3] = 1;
-    int stage_max_sols_i = 0;
+	a->opts->min_moves = 0;
+	a->opts->max_moves = 20;
+	a->opts->max_solutions = 100;
+	a->opts->nthreads = 1;
+	a->opts->optimal = -1;
+	a->opts->nisstype = NORMAL;
+	a->opts->verbose = false;
+	a->opts->all = false;
+	a->opts->print_number = true;
+	a->opts->count_only = false;
+	a->other = malloc(sizeof(int) * 8);
+	int *stage_max_moves = a->other;
+	stage_max_moves[0] = 5;
+	stage_max_moves[1] = 12;
+	stage_max_moves[2] = 20;
+	stage_max_moves[3] = 25;
+	int stage_max_moves_i = 0;
+	int *stage_max_solutions = stage_max_moves + 4;
+	stage_max_solutions[0] = 30;
+	stage_max_solutions[1] = 2;
+	stage_max_solutions[2] = 1;
+	stage_max_solutions[3] = 1;
+	int stage_max_sols_i = 0;
 
 
-    for (i = 0; i < c; i++) {
-        if (!strcmp(v[i], "-t") && i + 1 < c) {
-            val = strtol(v[++i], NULL, 10);
-            if (val < 1 || val > 64) {
-                fprintf(stderr,
-                        "Invalid number of threads."
-                        "1 <= t <= 64\n");
-                return a;
-            }
-            a->opts->nthreads = val;
-        } else if (!strcmp(v[i], "-i")) {
-            a->scrstdin = true;
-        } else if (!strcmp(v[i], "-v")) {
-            a->opts->verbose = true;
-        } else if (!strcmp(v[i], "-p")) {
-            a->opts->print_number = false;
-        } else if (!strcmp(v[i], "-c")) {
-            a->opts->count_only = true;
-        } else if (!strcmp(v[i], "-M")) {
-            if (stage_max_moves_i > 3) {
-                fprintf(stderr, "Too many -M\n");
-                return a;
-            }
-            val = strtol(v[++i], NULL, 10);
-            stage_max_moves[stage_max_moves_i++] = val;
-        } else if (!strcmp(v[i], "-n")) {
-            if (stage_max_sols_i > 3) {
-                fprintf(stderr, "Too many -n\n");
-                return a;
-            }
-            val = strtol(v[++i], NULL, 10);
-            stage_max_solutions[stage_max_sols_i++] = val;
-        } else if (!strcmp(v[i], "-odr")) {
-            if (a->opts->optimal != -1) {
-                fprintf(stderr, "conflict option -odr: you have supply -ohtr");
-                return a;
-            }
-            a->opts->optimal = 1;
-        } else if (!strcmp(v[i], "-ohtr")) {
-            if (a->opts->optimal != -1) {
-                fprintf(stderr, "conflict option -ohtr: you have supply -odr");
-                return a;
-            }
-            a->opts->optimal = 2;
-        } else {
-            break;
-        }
-    }
+	for (i = 0; i < c; i++) {
+		if (!strcmp(v[i], "-t") && i + 1 < c) {
+			val = strtol(v[++i], NULL, 10);
+			if (val < 1 || val > 64) {
+				fprintf(stderr,
+						"Invalid number of threads."
+						"1 <= t <= 64\n");
+				return a;
+			}
+			a->opts->nthreads = val;
+		} else if (!strcmp(v[i], "-i")) {
+			a->scrstdin = true;
+		} else if (!strcmp(v[i], "-v")) {
+			a->opts->verbose = true;
+		} else if (!strcmp(v[i], "-p")) {
+			a->opts->print_number = false;
+		} else if (!strcmp(v[i], "-c")) {
+			a->opts->count_only = true;
+		} else if (!strcmp(v[i], "-M")) {
+			if (stage_max_moves_i > 3) {
+				fprintf(stderr, "Too many -M\n");
+				return a;
+			}
+			val = strtol(v[++i], NULL, 10);
+			stage_max_moves[stage_max_moves_i++] = val;
+		} else if (!strcmp(v[i], "-n")) {
+			if (stage_max_sols_i > 3) {
+				fprintf(stderr, "Too many -n\n");
+				return a;
+			}
+			val = strtol(v[++i], NULL, 10);
+			stage_max_solutions[stage_max_sols_i++] = val;
+		} else if (!strcmp(v[i], "-odr")) {
+			if (a->opts->optimal != -1) {
+				fprintf(stderr, "conflict option -odr: you have supply -ohtr");
+				return a;
+			}
+			a->opts->optimal = 1;
+		} else if (!strcmp(v[i], "-ohtr")) {
+			if (a->opts->optimal != -1) {
+				fprintf(stderr, "conflict option -ohtr: you have supply -odr");
+				return a;
+			}
+			a->opts->optimal = 2;
+		} else {
+			break;
+		}
+	}
 
 	a->success = (a->scrstdin && i == c) || read_scramble(c-i, &v[i], a);
 	return a;
@@ -809,321 +809,321 @@ typedef struct alglistlist AlgListList;
 typedef struct alglistlistnode AlgListListNode;
 
 struct alglistlist {
-    AlgListListNode * first;
-    AlgListListNode * last;
-    int len;
+	AlgListListNode * first;
+	AlgListListNode * last;
+	int len;
 };
 
 struct alglistlistnode {
-    AlgList * alg_list;
-    Alg * final_alg;
-    AlgListListNode *next;
+	AlgList * alg_list;
+	Alg * final_alg;
+	AlgListListNode *next;
 };
 
 
 void
 compose_alg_with_cancel(Alg * alg1, Alg* alg2, bool in_inv)
 {
-    for (int i = 0; i < alg2->len; i++) {
-        if (alg2->inv[i] != in_inv)
-            continue;
-        Move nm = alg2->move[i];
-        if (alg1->len <= 0) {
-            append_move(alg1, nm, in_inv);
-            continue;
-        }
-        Move l1 = alg1->move[alg1->len-1];
-        if (!commute(nm, l1)) {
-            append_move(alg1, nm, in_inv);
-            continue;
-        }
-        Move bl1 = base_move(l1);
-        Move bn = base_move(nm);
-        if (bl1 == bn) {
-            if (l1 == inverse_move(nm)) {
-                alg1->len --;
-                alg1->move[alg1->len] = NULLMOVE;
-                alg1->inv[alg1->len] = false;
-                continue;
-            } else {
-                Move new_move = ((l1 - bl1) + (nm - bn) + 1) % 3 + bn;
-                alg1->move[alg1->len-1] = new_move;
-                continue;
-            }
-        } else if (alg1->len > 1) {
-            Move l2 = alg1->move[alg1->len-2];
-            Move bl2 = base_move(l2);
-            if (bl2 != bn) {
-                append_move(alg1, nm, in_inv);
-                continue;
-            } else if (l2 == inverse_move(nm)) {
-                alg1->len --;
-                alg1->move[alg1->len-1] = alg1->move[alg1->len];
-                alg1->move[alg1->len] = NULLMOVE;
-                alg1->inv[alg1->len] = false;
-                continue;
-            } else {
-                Move new_move = ((l2 - bl2) + (nm - bn) + 1) % 3 + bn;
-                alg1->move[alg1->len-2] = new_move;
-                continue;
-            }
-        } else {
-            append_move(alg1, nm, in_inv);
-            continue;
-        }
-    }
+	for (int i = 0; i < alg2->len; i++) {
+		if (alg2->inv[i] != in_inv)
+			continue;
+		Move nm = alg2->move[i];
+		if (alg1->len <= 0) {
+			append_move(alg1, nm, in_inv);
+			continue;
+		}
+		Move l1 = alg1->move[alg1->len-1];
+		if (!commute(nm, l1)) {
+			append_move(alg1, nm, in_inv);
+			continue;
+		}
+		Move bl1 = base_move(l1);
+		Move bn = base_move(nm);
+		if (bl1 == bn) {
+			if (l1 == inverse_move(nm)) {
+				alg1->len --;
+				alg1->move[alg1->len] = NULLMOVE;
+				alg1->inv[alg1->len] = false;
+				continue;
+			} else {
+				Move new_move = ((l1 - bl1) + (nm - bn) + 1) % 3 + bn;
+				alg1->move[alg1->len-1] = new_move;
+				continue;
+			}
+		} else if (alg1->len > 1) {
+			Move l2 = alg1->move[alg1->len-2];
+			Move bl2 = base_move(l2);
+			if (bl2 != bn) {
+				append_move(alg1, nm, in_inv);
+				continue;
+			} else if (l2 == inverse_move(nm)) {
+				alg1->len --;
+				alg1->move[alg1->len-1] = alg1->move[alg1->len];
+				alg1->move[alg1->len] = NULLMOVE;
+				alg1->inv[alg1->len] = false;
+				continue;
+			} else {
+				Move new_move = ((l2 - bl2) + (nm - bn) + 1) % 3 + bn;
+				alg1->move[alg1->len-2] = new_move;
+				continue;
+			}
+		} else {
+			append_move(alg1, nm, in_inv);
+			continue;
+		}
+	}
 }
 
 AlgListListNode  *
 create_alg_list_list_node(AlgList* alg_list)
 {
-    AlgListListNode * alln = malloc(sizeof(AlgListListNode));
-    alln->alg_list = alg_list;
-    alln->next = NULL;
-    alln->final_alg = new_alg("");
-    int i = 0;
-    Alg* algs[2] = {new_alg(""), new_alg("")};
-    for (int in_inv=0; in_inv <= 1; in_inv++)
-        for (AlgListNode *node = alg_list->first; node != NULL; node = node->next)
-            compose_alg_with_cancel(algs[in_inv], node->alg, in_inv);
-    compose_alg(alln->final_alg, algs[0]);
-    compose_alg_with_cancel(alln->final_alg, on_inverse(inverse_alg(algs[1])), false);
-    return alln;
+	AlgListListNode * alln = malloc(sizeof(AlgListListNode));
+	alln->alg_list = alg_list;
+	alln->next = NULL;
+	alln->final_alg = new_alg("");
+	int i = 0;
+	Alg* algs[2] = {new_alg(""), new_alg("")};
+	for (int in_inv=0; in_inv <= 1; in_inv++)
+		for (AlgListNode *node = alg_list->first; node != NULL; node = node->next)
+			compose_alg_with_cancel(algs[in_inv], node->alg, in_inv);
+	compose_alg(alln->final_alg, algs[0]);
+	compose_alg_with_cancel(alln->final_alg, on_inverse(inverse_alg(algs[1])), false);
+	return alln;
 }
 
 
 static void
 step_by_step_solve(Cube cube, Step** next_steps, struct solveoptions** next_opts, AlgList* pre_step_algs,  AlgListList* sols) {
-    if (*next_steps == NULL) {
-        AlgList* alg_list = new_alglist();
-        for (AlgListNode *alg_list_node = pre_step_algs->first; alg_list_node != NULL; alg_list_node = alg_list_node->next) {
-            append_alg(alg_list, alg_list_node->alg);
-        }
-        AlgListListNode * alg_list_list_node = create_alg_list_list_node(alg_list);
-        if (++sols->len == 1)
-            sols->first = alg_list_list_node;
-        else
-            sols->last->next = alg_list_list_node;
-        sols->last = alg_list_list_node;
-        return;
-    }
-    AlgListNode *last_alg_node = pre_step_algs->last;
-    Cube c;
-    if (last_alg_node) {
-        c = apply_alg(last_alg_node->alg, cube);
-    } else {
-        c = cube;
-    }
-    int next_max_moves = (*next_opts)->max_moves;
-    int cur_total_len = 0;
-    for (AlgListNode *alg_list_node = pre_step_algs->first; alg_list_node != NULL; alg_list_node = alg_list_node->next) {
-        cur_total_len += alg_list_node->alg->len;
-    }
-    if (next_max_moves <= cur_total_len) {
-        return;
-    }
-    (*next_opts)->max_moves = next_max_moves - cur_total_len;
-    AlgList* cur_step_algs = solve(c, *next_steps, *next_opts);
-    (*next_opts)->max_moves = next_max_moves;
-    for (AlgListNode* cur_step_alg = cur_step_algs->first; cur_step_alg != NULL; cur_step_alg=cur_step_alg->next) {
-        append_alg(pre_step_algs, cur_step_alg->alg);
-        step_by_step_solve(c, next_steps+1, next_opts+1, pre_step_algs, sols);
-        pre_step_algs->len --;
-        if (last_alg_node) {
-            // free_alg(pre_step_algs->last->alg);
-            // free(pre_step_algs->last);
-            pre_step_algs->last = last_alg_node;
-            last_alg_node->next = NULL;
-        } else {
-            // free_alg(pre_step_algs->first->alg);
-            // free(pre_step_algs->first);
-            pre_step_algs->first = NULL;
-            pre_step_algs->last = NULL;
-        }
-    }
-    free_alglist(cur_step_algs);
+	if (*next_steps == NULL) {
+		AlgList* alg_list = new_alglist();
+		for (AlgListNode *alg_list_node = pre_step_algs->first; alg_list_node != NULL; alg_list_node = alg_list_node->next) {
+			append_alg(alg_list, alg_list_node->alg);
+		}
+		AlgListListNode * alg_list_list_node = create_alg_list_list_node(alg_list);
+		if (++sols->len == 1)
+			sols->first = alg_list_list_node;
+		else
+			sols->last->next = alg_list_list_node;
+		sols->last = alg_list_list_node;
+		return;
+	}
+	AlgListNode *last_alg_node = pre_step_algs->last;
+	Cube c;
+	if (last_alg_node) {
+		c = apply_alg(last_alg_node->alg, cube);
+	} else {
+		c = cube;
+	}
+	int next_max_moves = (*next_opts)->max_moves;
+	int cur_total_len = 0;
+	for (AlgListNode *alg_list_node = pre_step_algs->first; alg_list_node != NULL; alg_list_node = alg_list_node->next) {
+		cur_total_len += alg_list_node->alg->len;
+	}
+	if (next_max_moves <= cur_total_len) {
+		return;
+	}
+	(*next_opts)->max_moves = next_max_moves - cur_total_len;
+	AlgList* cur_step_algs = solve(c, *next_steps, *next_opts);
+	(*next_opts)->max_moves = next_max_moves;
+	for (AlgListNode* cur_step_alg = cur_step_algs->first; cur_step_alg != NULL; cur_step_alg=cur_step_alg->next) {
+		append_alg(pre_step_algs, cur_step_alg->alg);
+		step_by_step_solve(c, next_steps+1, next_opts+1, pre_step_algs, sols);
+		pre_step_algs->len --;
+		if (last_alg_node) {
+			free_alg(pre_step_algs->last->alg);
+			free(pre_step_algs->last);
+			pre_step_algs->last = last_alg_node;
+			last_alg_node->next = NULL;
+		} else {
+			free_alg(pre_step_algs->first->alg);
+			free(pre_step_algs->first);
+			pre_step_algs->first = NULL;
+			pre_step_algs->last = NULL;
+		}
+	}
+	free_alglist(cur_step_algs);
 }
 
 
 static int
 count_alg_list(AlgList *alg_list)
 {
-    int s = 0;
-    for (AlgListNode *node = alg_list->first; node != NULL; node = node->next)
-        s += node->alg->len;
-    return s;
+	int s = 0;
+	for (AlgListNode *node = alg_list->first; node != NULL; node = node->next)
+		s += node->alg->len;
+	return s;
 }
 
 
 static int
 compare_alg_list_list_node(const void *avoid, const void *bvoid)
 {
-    AlgListListNode *a = *(AlgListListNode **) avoid;
-    AlgListListNode *b = *(AlgListListNode **) bvoid;
-    if (a->final_alg->len - b->final_alg->len)
-        return a->final_alg->len - b->final_alg->len;
-    int ta = count_alg_list(a->alg_list);
-    int tb = count_alg_list(b->alg_list);
-    if (ta - tb)
-        return ta - tb;
+	AlgListListNode *a = *(AlgListListNode **) avoid;
+	AlgListListNode *b = *(AlgListListNode **) bvoid;
+	if (a->final_alg->len - b->final_alg->len)
+		return a->final_alg->len - b->final_alg->len;
+	int ta = count_alg_list(a->alg_list);
+	int tb = count_alg_list(b->alg_list);
+	if (ta - tb)
+		return ta - tb;
 
-    AlgListNode *an = a->alg_list->first;
-    AlgListNode *bn = b->alg_list->first;
-    while (an != NULL && bn != NULL) {
-        if (an->alg->len - bn->alg->len)
-            return an->alg->len - bn->alg->len;
-        an = an->next;
-        bn = bn->next;
-    }
-    if (an)
-        return 1;
-    if (bn)
-        return -1;
-    return 0;
+	AlgListNode *an = a->alg_list->first;
+	AlgListNode *bn = b->alg_list->first;
+	while (an != NULL && bn != NULL) {
+		if (an->alg->len - bn->alg->len)
+			return an->alg->len - bn->alg->len;
+		an = an->next;
+		bn = bn->next;
+	}
+	if (an)
+		return 1;
+	if (bn)
+		return -1;
+	return 0;
 }
 
 static void
 stage_exec(CommandArgs *args)
 {
-    Cube c;
+	Cube c;
 
 	init_all_movesets();
 	init_symcoord();
 
 	c = apply_alg(args->scramble, (Cube){0});
-    int* stage_max_moves = args->other;
-    int* stage_max_sols = stage_max_moves+4;
-    struct solveoptions eo_opts = {
-            .min_moves = 0,
-            .max_moves = stage_max_moves[0],
-            .max_solutions = stage_max_sols[0],
-            .nthreads = args->opts->nthreads,
-            .optimal = -1,
-            .nisstype = NISS,
-            .verbose = false,
-            .all = true,
-            .print_number = true,
-            .count_only = false,
-    };
-    struct solveoptions dr_opts = {
-            .min_moves = 0,
-            .max_moves = stage_max_moves[1],
-            .max_solutions = stage_max_sols[1],
-            .nthreads = args->opts->nthreads,
-            .optimal = 0,
-            .nisstype = NISS,
-            .verbose = false,
-            .all = true,
-            .print_number = true,
-            .count_only = false,
-    };
-    struct solveoptions htr_opts = {
-            .min_moves = 0,
-            .max_moves = stage_max_moves[2],
-            .max_solutions = stage_max_sols[2],
-            .nthreads = args->opts->nthreads,
-            .optimal = 0,
-            .nisstype = NISS,
-            .verbose = false,
-            .all = false,
-            .print_number = true,
-            .count_only = false,
-    };
-    struct solveoptions htrfin_opts = {
-            .min_moves = 0,
-            .max_moves = stage_max_moves[3],
-            .max_solutions = stage_max_sols[3],
-            .nthreads = args->opts->nthreads,
-            .optimal = 0,
-            .nisstype = NORMAL,
-            .verbose = false,
-            .all = true,
-            .print_number = true,
-            .count_only = false,
-    };
-    struct solveoptions* all_opts[5] ={
-            &eo_opts, &dr_opts, &htr_opts, &htrfin_opts, NULL,
-    };
-    Step* eo_steps[] = {
-            get_step("eofb"),
-            get_step("eorl"),
-            get_step("eoud"),
-    };
-    Step* dr_steps[] = {
-            get_step("drrl-eofb"),
-            get_step("drud-eofb"),
-            get_step("drfb-eorl"),
-            get_step("drud-eorl"),
-            get_step("drfb-eoud"),
-            get_step("drrl-eoud"),
-    };
-    Step * htr_step = NULL, * fin_step = NULL;
-    if (args->opts->optimal == 0) {
-        htr_step = get_step("htr");
-        fin_step = get_step("htrfin");
-    } else if (args->opts->optimal == 1) {
-        htr_step = get_step("optimal");
-        all_opts[2] = &htrfin_opts;
-        all_opts[3] = NULL;
-    } else if (args->opts->optimal == 2) {
-        htr_step = get_step("htr");
-        fin_step = get_step("optimal");
-    } else {
-        fprintf(stderr, "WTF, shall never reached!!!\n");
-        return;
-    }
-    Step* all_steps[][5] = {
-            {eo_steps[0], dr_steps[0], htr_step, fin_step, NULL},
-            {eo_steps[0], dr_steps[1], htr_step, fin_step, NULL},
-            {eo_steps[1], dr_steps[2], htr_step, fin_step, NULL},
-            {eo_steps[1], dr_steps[3], htr_step, fin_step, NULL},
-            {eo_steps[2], dr_steps[4], htr_step, fin_step, NULL},
-            {eo_steps[2], dr_steps[5], htr_step, fin_step, NULL},
-            {NULL, NULL, NULL, NULL, NULL},
-    };
-    AlgListList alglistlist = {
-            .first = NULL,
-            .last = NULL,
-            .len = 0
-    };
-    for (Step** sol_steps = all_steps[0]; sol_steps[0] != NULL; sol_steps+=5) {
-        if (args->opts->verbose) {
-            fprintf(stderr, "searching: %s(m<=%d,n<=%d)", sol_steps[0]->shortname, all_opts[0]->max_moves, all_opts[0]->max_solutions);
-            int stepi = 1;
-            for (Step **tstep = sol_steps+1; *tstep != NULL; tstep++, stepi++)
-                fprintf(stderr, "->%s(m<=%d,n<=%d)", (*tstep)->shortname, all_opts[stepi]->max_moves, all_opts[stepi]->max_solutions);
-            fprintf(stderr, "\n");
-        }
-        AlgList *pre_step = new_alglist();
-        int sols_before = alglistlist.len;
-        step_by_step_solve(c, sol_steps, all_opts, pre_step, &alglistlist);
-        if (args->opts->verbose) {
-            fprintf(stderr, "%d Found.\n", alglistlist.len - sols_before);
-        }
-    }
-    AlgListListNode* alg_list_list_node_array[alglistlist.len+1];
-    int i;
-    AlgListListNode *node;
-    for (i = 0, node = alglistlist.first; i < alglistlist.len; i++, node=node->next)
-        alg_list_list_node_array[i] = node;
-    qsort(alg_list_list_node_array, alglistlist.len, sizeof(AlgListListNode*), &compare_alg_list_list_node);
-    for (i = 1; i < alglistlist.len; i++) {
-        alg_list_list_node_array[i]->next = NULL;
-        alg_list_list_node_array[i-1]->next = alg_list_list_node_array[i];
-    }
-    alglistlist.first = alg_list_list_node_array[0];
-    alglistlist.last = alg_list_list_node_array[alglistlist.len - 1];
+	int* stage_max_moves = args->other;
+	int* stage_max_sols = stage_max_moves+4;
+	struct solveoptions eo_opts = {
+			.min_moves = 0,
+			.max_moves = stage_max_moves[0],
+			.max_solutions = stage_max_sols[0],
+			.nthreads = args->opts->nthreads,
+			.optimal = -1,
+			.nisstype = NISS,
+			.verbose = false,
+			.all = true,
+			.print_number = true,
+			.count_only = false,
+	};
+	struct solveoptions dr_opts = {
+			.min_moves = 0,
+			.max_moves = stage_max_moves[1],
+			.max_solutions = stage_max_sols[1],
+			.nthreads = args->opts->nthreads,
+			.optimal = 0,
+			.nisstype = NISS,
+			.verbose = false,
+			.all = true,
+			.print_number = true,
+			.count_only = false,
+	};
+	struct solveoptions htr_opts = {
+			.min_moves = 0,
+			.max_moves = stage_max_moves[2],
+			.max_solutions = stage_max_sols[2],
+			.nthreads = args->opts->nthreads,
+			.optimal = 0,
+			.nisstype = NISS,
+			.verbose = false,
+			.all = false,
+			.print_number = true,
+			.count_only = false,
+	};
+	struct solveoptions htrfin_opts = {
+			.min_moves = 0,
+			.max_moves = stage_max_moves[3],
+			.max_solutions = stage_max_sols[3],
+			.nthreads = args->opts->nthreads,
+			.optimal = 0,
+			.nisstype = NORMAL,
+			.verbose = false,
+			.all = true,
+			.print_number = true,
+			.count_only = false,
+	};
+	struct solveoptions* all_opts[5] ={
+			&eo_opts, &dr_opts, &htr_opts, &htrfin_opts, NULL,
+	};
+	Step* eo_steps[] = {
+			get_step("eofb"),
+			get_step("eorl"),
+			get_step("eoud"),
+	};
+	Step* dr_steps[] = {
+			get_step("drrl-eofb"),
+			get_step("drud-eofb"),
+			get_step("drfb-eorl"),
+			get_step("drud-eorl"),
+			get_step("drfb-eoud"),
+			get_step("drrl-eoud"),
+	};
+	Step * htr_step = NULL, * fin_step = NULL;
+	if (args->opts->optimal == 0) {
+		htr_step = get_step("htr");
+		fin_step = get_step("htrfin");
+	} else if (args->opts->optimal == 1) {
+		htr_step = get_step("optimal");
+		all_opts[2] = &htrfin_opts;
+		all_opts[3] = NULL;
+	} else if (args->opts->optimal == 2) {
+		htr_step = get_step("htr");
+		fin_step = get_step("optimal");
+	} else {
+		fprintf(stderr, "WTF, shall never reached!!!\n");
+		return;
+	}
+	Step* all_steps[][5] = {
+			{eo_steps[0], dr_steps[0], htr_step, fin_step, NULL},
+			{eo_steps[0], dr_steps[1], htr_step, fin_step, NULL},
+			{eo_steps[1], dr_steps[2], htr_step, fin_step, NULL},
+			{eo_steps[1], dr_steps[3], htr_step, fin_step, NULL},
+			{eo_steps[2], dr_steps[4], htr_step, fin_step, NULL},
+			{eo_steps[2], dr_steps[5], htr_step, fin_step, NULL},
+			{NULL, NULL, NULL, NULL, NULL},
+	};
+	AlgListList alglistlist = {
+			.first = NULL,
+			.last = NULL,
+			.len = 0
+	};
+	for (Step** sol_steps = all_steps[0]; sol_steps[0] != NULL; sol_steps+=5) {
+		if (args->opts->verbose) {
+			fprintf(stderr, "searching: %s(m<=%d,n<=%d)", sol_steps[0]->shortname, all_opts[0]->max_moves, all_opts[0]->max_solutions);
+			int stepi = 1;
+			for (Step **tstep = sol_steps+1; *tstep != NULL; tstep++, stepi++)
+				fprintf(stderr, "->%s(m<=%d,n<=%d)", (*tstep)->shortname, all_opts[stepi]->max_moves, all_opts[stepi]->max_solutions);
+			fprintf(stderr, "\n");
+		}
+		AlgList *pre_step = new_alglist();
+		int sols_before = alglistlist.len;
+		step_by_step_solve(c, sol_steps, all_opts, pre_step, &alglistlist);
+		if (args->opts->verbose) {
+			fprintf(stderr, "%d Found.\n", alglistlist.len - sols_before);
+		}
+	}
+	AlgListListNode* alg_list_list_node_array[alglistlist.len+1];
+	int i;
+	AlgListListNode *node;
+	for (i = 0, node = alglistlist.first; i < alglistlist.len; i++, node=node->next)
+		alg_list_list_node_array[i] = node;
+	qsort(alg_list_list_node_array, alglistlist.len, sizeof(AlgListListNode*), &compare_alg_list_list_node);
+	for (i = 1; i < alglistlist.len; i++) {
+		alg_list_list_node_array[i]->next = NULL;
+		alg_list_list_node_array[i-1]->next = alg_list_list_node_array[i];
+	}
+	alglistlist.first = alg_list_list_node_array[0];
+	alglistlist.last = alg_list_list_node_array[alglistlist.len - 1];
 
-    int no = 1;
-    for (AlgListListNode* alglistlistnode = alglistlist.first; alglistlistnode != NULL; alglistlistnode = alglistlistnode->next, no++) {
-        fprintf(stdout, "------\n");
-        int total_moves = 0;
-        for (AlgListNode* step_list_node = alglistlistnode->alg_list->first; step_list_node != NULL; step_list_node = step_list_node->next)
-            total_moves += step_list_node->alg->len;
-        fprintf(stdout, "no.%d (%d <- %d): ", no, alglistlistnode->final_alg->len, total_moves);
-        print_alg(stdout, alglistlistnode->final_alg, true);
-        print_alglist(stdout, alglistlistnode->alg_list, true);
-    }
+	int no = 1;
+	for (AlgListListNode* alglistlistnode = alglistlist.first; alglistlistnode != NULL; alglistlistnode = alglistlistnode->next, no++) {
+		fprintf(stdout, "------\n");
+		int total_moves = 0;
+		for (AlgListNode* step_list_node = alglistlistnode->alg_list->first; step_list_node != NULL; step_list_node = step_list_node->next)
+			total_moves += step_list_node->alg->len;
+		fprintf(stdout, "no.%d (%d <- %d): ", no, alglistlistnode->final_alg->len, total_moves);
+		print_alg(stdout, alglistlistnode->final_alg, true);
+		print_alglist(stdout, alglistlistnode->alg_list, true);
+	}
 }
 
 /* Local functions implementation ********************************************/
@@ -1192,14 +1192,14 @@ read_step(CommandArgs *args, char *str)
 static Step*
 get_step(char *str)
 {
-    int i;
+	int i;
 
-    for (i = 0; steps[i] != NULL; i++) {
-        if (!strcmp(steps[i]->shortname, str)) {
-            return steps[i];
-        }
-    }
-    return NULL;
+	for (i = 0; steps[i] != NULL; i++) {
+		if (!strcmp(steps[i]->shortname, str)) {
+			return steps[i];
+		}
+	}
+	return NULL;
 }
 
 /* Public functions implementation *******************************************/
@@ -1214,8 +1214,8 @@ free_args(CommandArgs *args)
 		free_alg(args->scramble);
 	if (args->opts != NULL)
 		free(args->opts);
-    if (args->other != NULL)
-        free(args->other);
+	if (args->other != NULL)
+		free(args->other);
 
 	/* step and command must not be freed, they are static! */
 
@@ -1237,7 +1237,7 @@ new_args(void)
 	args->command = NULL;
 	args->pd = NULL;
 
-    args->other = NULL;
+	args->other = NULL;
 
 	return args;
 }
