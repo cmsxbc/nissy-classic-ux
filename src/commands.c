@@ -487,6 +487,10 @@ stage_parse_args(int c, char **v)
 				return a;
 			}
 			val = strtol(v[++i], NULL, 10);
+			if (stage_max_moves_i >= 1 && val <= stage_max_moves[stage_max_moves_i - 1]) {
+				fprintf(stderr, "stage max moves should be strict increase!!! It's cumulative max moves. current: %d, last: %d\n", val, stage_max_moves[stage_max_moves_i - 1]);
+				return a;
+			}
 			stage_max_moves[stage_max_moves_i++] = val;
 		} else if (!strcmp(v[i], "-n")) {
 			if (stage_max_sols_i > 3) {
@@ -495,15 +499,21 @@ stage_parse_args(int c, char **v)
 			}
 			val = strtol(v[++i], NULL, 10);
 			stage_max_solutions[stage_max_sols_i++] = val;
-		} else if (!strcmp(v[i], "-odr")) {
+		} else if (!strcmp(v[i], "-ohtropt")) {
 			if (a->opts->optimal != -1) {
-				fprintf(stderr, "conflict option -odr: you have supply -ohtr");
+				fprintf(stderr, "conflict option -ohtropt: you have supply -o%d\n", a->opts->optimal);
+				return a;
+			}
+			a->opts->optimal = 0;
+		} else if (!strcmp(v[i], "-odrfin")) {
+			if (a->opts->optimal != -1) {
+				fprintf(stderr, "conflict option -odrfin: you have supply -o%d\n", a->opts->optimal);
 				return a;
 			}
 			a->opts->optimal = 1;
-		} else if (!strcmp(v[i], "-ohtr")) {
+		} else if (!strcmp(v[i], "-oopt")) {
 			if (a->opts->optimal != -1) {
-				fprintf(stderr, "conflict option -ohtr: you have supply -odr");
+				fprintf(stderr, "conflict option -oopt: you have supply -o%d\n", a->opts->optimal);
 				return a;
 			}
 			a->opts->optimal = 2;
@@ -513,6 +523,9 @@ stage_parse_args(int c, char **v)
 	}
 
 	a->success = (a->scrstdin && i == c) || read_scramble(c-i, &v[i], a);
+	for (i = stage_max_moves_i; i < 4; i ++)
+		if (stage_max_moves[i] < stage_max_moves[i-1])
+			stage_max_moves[i] = stage_max_moves[i-1];
 	return a;
 }
 
@@ -1058,16 +1071,20 @@ stage_exec(CommandArgs *args)
 			get_step("drrl-eoud"),
 	};
 	Step * htr_step = NULL, * fin_step = NULL;
-	if (args->opts->optimal == 0) {
+	if (args->opts->optimal == -1) {
 		htr_step = get_step("htr");
 		fin_step = get_step("htrfin");
+	} else if (args->opts->optimal == 0) {
+		htr_step = get_step("htr");
+		fin_step = get_step("optimal");
 	} else if (args->opts->optimal == 1) {
-		htr_step = get_step("optimal");
+		htr_step = get_step("drfin");
 		all_opts[2] = &htrfin_opts;
 		all_opts[3] = NULL;
 	} else if (args->opts->optimal == 2) {
-		htr_step = get_step("htr");
-		fin_step = get_step("optimal");
+		htr_step = get_step("optimal");
+		all_opts[2] = &htrfin_opts;
+		all_opts[3] = NULL;
 	} else {
 		fprintf(stderr, "WTF, shall never reached!!!\n");
 		return;
@@ -1100,6 +1117,10 @@ stage_exec(CommandArgs *args)
 		if (args->opts->verbose) {
 			fprintf(stderr, "%d Found.\n", alglistlist.len - sols_before);
 		}
+	}
+	if (alglistlist.len < 1){
+		fprintf(stdout, "Nothing Found!!!! Loosen moves limit and try again.\n");
+		return;
 	}
 	AlgListListNode* alg_list_list_node_array[alglistlist.len+1];
 	int i;
