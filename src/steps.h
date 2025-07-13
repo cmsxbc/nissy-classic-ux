@@ -14,4 +14,9 @@ void                    invert_estimatedata(EstimateData *ed);
 void                    reset_estimatedata(EstimateData *ed);
 void                    prepare_step(Step *step, SolveOptions *opts);
 
+/* Checkers */
+bool                    check_eofb(Cube cube);
+bool                    check_drud(Cube cube);
+bool                    check_htr(Cube cube);
+
 #endif

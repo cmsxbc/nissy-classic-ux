@@ -10,10 +10,7 @@ static bool             check_coud_URF(Cube cube);
 static bool             check_corners_HTM(Cube cube);
 static bool             check_corners_URF(Cube cube);
 static bool             check_cornershtr(Cube cube);
-static bool             check_eofb(Cube cube);
-static bool             check_drud(Cube cube);
 static bool             check_drud_or_drrl(Cube cube);
-static bool             check_htr(Cube cube);
 static bool             check_drudslice(Cube cube);
 
 static int              estimate_eofb_HTM(DfsArg *arg);
@@ -1188,13 +1185,13 @@ check_cornershtr(Cube cube)
 	return coord_cornershtr.index(cube) == 0;
 }
 
-static bool
+bool
 check_eofb(Cube cube)
 {
 	return cube.eofb == 0;
 }
 
-static bool
+bool
 check_drud(Cube cube)
 {
 	return cube.eofb == 0 && cube.eorl == 0 && cube.coud == 0;
@@ -1206,7 +1203,7 @@ check_drud_or_drrl(Cube cube)
 	return check_drud(cube) || check_drud(apply_trans(rf, cube));
 }
 
-static bool
+bool
 check_htr(Cube cube)
 {
 	return check_drud(cube) && coord_htr_drud.index(cube) == 0;

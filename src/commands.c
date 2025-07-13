@@ -10,6 +10,7 @@ CommandArgs *           ptable_parse_args(int c, char **v);
 CommandArgs *           solve_parse_args(int c, char **v);
 CommandArgs *           scramble_parse_args(int c, char **v);
 CommandArgs *           stage_parse_args(int c, char **v);
+CommandArgs *           verify_parse_args(int c, char **v);
 
 /* Exec functions ************************************************************/
 
@@ -29,6 +30,7 @@ static void             quit_exec(CommandArgs *args);
 static void             unniss_exec(CommandArgs *args);
 static void             version_exec(CommandArgs *args);
 static void             stage_exec(CommandArgs *args);
+static void             verify_exec(CommandArgs *args);
 
 /* Local functions ***********************************************************/
 
@@ -183,6 +185,15 @@ stage_cmd = {
 	.exec        = stage_exec,
 };
 
+Command
+verify_cmd = {
+	.name = "verify",
+	.usage = "verify SCRAMBLE",
+	.description = "Verify if a scramble satisfies EO, DR, and HTR conditions",
+	.parse_args = verify_parse_args,
+	.exec = verify_exec,
+};
+
 Command *commands[] = {
 	&commands_cmd,
 	&freemem_cmd,
@@ -200,6 +211,7 @@ Command *commands[] = {
 	&unniss_cmd,
 	&version_cmd,
 	&stage_cmd,
+	&verify_cmd,
 	NULL
 };
 
@@ -526,6 +538,42 @@ stage_parse_args(int c, char **v)
 	for (i = stage_max_moves_i; i < 4; i ++)
 		if (stage_max_moves[i] < stage_max_moves[i-1])
 			stage_max_moves[i] = stage_max_moves[i-1];
+	return a;
+}
+
+CommandArgs *
+verify_parse_args(int c, char **v) {
+	CommandArgs *a = new_args();
+	a->other = malloc(sizeof(char) * 20);
+	a->success = true;
+
+	int arg_offset = 0;
+	char *target = "all";
+
+	if (c > 0) {
+		char *first_arg = v[0];
+		if (strcmp(first_arg, "eo") == 0 || strcmp(first_arg, "eofb") == 0 || strcmp(first_arg, "eorl") == 0 ||
+		    strcmp(first_arg, "eoud") == 0 ||
+		    strcmp(first_arg, "dr") == 0 || strcmp(first_arg, "drfb") == 0 || strcmp(first_arg, "drrl") == 0 || strcmp(
+			    first_arg, "drud") == 0 ||
+		    strcmp(first_arg, "htr") == 0) {
+			target = first_arg;
+			arg_offset = 1;
+		}
+	}
+	strcpy(a->other, target);
+
+	if (c - arg_offset == 0) {
+		if (!a->scrstdin) {
+			fprintf(stderr, "Error: no scramble given?\n");
+			a->success = false;
+			return a;
+		}
+	}
+
+	if (!a->scrstdin) {
+		a->success = read_scramble(c - arg_offset, &v[arg_offset], a);
+	}
 	return a;
 }
 
@@ -1147,11 +1195,88 @@ stage_exec(CommandArgs *args)
 	}
 }
 
+static void
+verify_exec(CommandArgs *args)
+{
+	Cube c;
+	char *target = args->other;
+
+	init_all_movesets();
+	init_symcoord();
+
+	c = apply_alg(args->scramble, (Cube){0});
+
+	if (strcmp(target, "all") == 0) {
+		if (check_htr(c)) {
+			printf("State: HTR\n");
+		} else {
+			bool dr_passed = false;
+			if (check_drud(apply_trans(uf, c))) {
+				printf("State: DR (UD)\n");
+				dr_passed = true;
+			}
+			if (check_drud(apply_trans(rf, c))) {
+				printf("State: DR (RL)\n");
+				dr_passed = true;
+			}
+			if (check_drud(apply_trans(fd, c))) {
+				printf("State: DR (FB)\n");
+				dr_passed = true;
+			}
+
+			if (!dr_passed) {
+				bool eo_passed = false;
+				if (check_eofb(apply_trans(uf, c))) {
+					printf("State: EO (FB)\n");
+					eo_passed = true;
+				}
+				if (check_eofb(apply_trans(ur, c))) {
+					printf("State: EO (RL)\n");
+					eo_passed = true;
+				}
+				if (check_eofb(apply_trans(fd, c))) {
+					printf("State: EO (UD)\n");
+					eo_passed = true;
+				}
+				if (!eo_passed) {
+					printf("State: Nothing\n");
+				}
+			}
+		}
+	} else if (strcmp(target, "htr") == 0) {
+		printf("HTR: %s\n", check_htr(c) ? "Pass" : "Fail");
+	} else if (strcmp(target, "dr") == 0) {
+		bool dr_passed = false;
+		if (check_drud(apply_trans(uf, c))) { dr_passed = true; }
+		if (check_drud(apply_trans(rf, c))) { dr_passed = true; }
+		if (check_drud(apply_trans(fd, c))) { dr_passed = true; }
+		printf("DR (any axis): %s\n", dr_passed ? "Pass" : "Fail");
+	} else if (strcmp(target, "drud") == 0) {
+		printf("DR (UD): %s\n", check_drud(apply_trans(uf, c)) ? "Pass" : "Fail");
+	} else if (strcmp(target, "drrl") == 0) {
+		printf("DR (RL): %s\n", check_drud(apply_trans(rf, c)) ? "Pass" : "Fail");
+	} else if (strcmp(target, "drfb") == 0) {
+		printf("DR (FB): %s\n", check_drud(apply_trans(fd, c)) ? "Pass" : "Fail");
+	} else if (strcmp(target, "eo") == 0) {
+		bool eo_passed = false;
+		if (check_eofb(apply_trans(uf, c))) { eo_passed = true; }
+		if (check_eofb(apply_trans(ur, c))) { eo_passed = true; }
+		if (check_eofb(apply_trans(fd, c))) { eo_passed = true; }
+		printf("EO (any axis): %s\n", eo_passed ? "Pass" : "Fail");
+	} else if (strcmp(target, "eofb") == 0) {
+		printf("EO (FB): %s\n", check_eofb(apply_trans(uf, c)) ? "Pass" : "Fail");
+	} else if (strcmp(target, "eorl") == 0) {
+		printf("EO (RL): %s\n", check_eofb(apply_trans(ur, c)) ? "Pass" : "Fail");
+	} else if (strcmp(target, "eoud") == 0) {
+		printf("EO (UD): %s\n", check_eofb(apply_trans(fd, c)) ? "Pass" : "Fail");
+	}
+}
+
+
 /* Local functions implementation ********************************************/
 
 static bool
-read_scramble(int c, char **v, CommandArgs *args)
-{
+read_scramble(int c, char **v, CommandArgs *args) {
 	int i, k, n;
 	unsigned int j;
 	char *algstr;
